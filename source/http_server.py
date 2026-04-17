@@ -68,11 +68,9 @@ recibe ruta del archivo json en formato texto y devuelve el diccionario
 equivalente en python
 """
 def read_json(ruta):
-    with open(ruta, "r", encoding="utf-8") as file:
-        file.read()
-    
-    dict_json = json.loads(file)
-    
+    with open(ruta, "r", encoding="utf-8") as file:    
+        dict_json = json.load(file)
+
     return dict_json
 
     
