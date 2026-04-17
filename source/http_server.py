@@ -1,5 +1,6 @@
 from email.utils import formatdate
 import socket
+import json
 
 
 """
@@ -61,6 +62,21 @@ html_encoded = html_body.encode()
 length_indexHTML = len(html_encoded) #largo de cuerpo para mensaje http
 type_encoding_indexHTML = "text/html; charset=utf-8" #para linea de http 'Content-Type:...'
 
+"""
+read_json :: str -> dict
+recibe ruta del archivo json en formato texto y devuelve el diccionario 
+equivalente en python
+"""
+def read_json(ruta):
+    with open(ruta, "r", encoding="utf-8") as file:
+        file.read()
+    
+    dict_json = json.loads(file)
+    
+    return dict_json
+
+    
+
 buff_size = 1024
 address = ('localhost', 8000)
 
@@ -80,14 +96,16 @@ while True:
     msg = client_socket.recv(buff_size)
     msg_str = msg.decode()
     parsed_msg = parse_HTTP_message(msg_str)
-    print(create_HTTP_message(parsed_msg))
 
     start_line_list = parsed_msg["start-line"].split(" ")
     method = start_line_list[0]
 
     response = ""
+    response_code = ""
+
     if(method=="GET"):
-        start_line_response = start_line_list[2]+" 200 OK\r\n"
+        response_code = "200"
+        start_line_response = start_line_list[2]+" "+response_code+" OK\r\n"
         response += start_line_response                                #start-line
         response += "Server: http_server.py\r\n"                       #server
 
@@ -96,12 +114,18 @@ while True:
         response += f"Content-Type: {type_encoding_indexHTML}\r\n"     #content type
         response += f"Content-Length: {length_indexHTML}\r\n"          #content length
         response += "Connection: keep-alive\r\n"                       #connection
-        response += "Acces-Control-Allow-Origin: *\r\n\r\n"            #allowed origins
+        response += "Acces-Control-Allow-Origin: *\r\n"                #allowed origins
+
+        response += "X-ElQuePregunta: vicente\r\n\r\n"
 
         response += html_body 
 
+    print(method + " " + response_code)
+    print(response)
 
-    print("Se ha recibido mensaje...")
+    client_socket.send(response.encode())
+
+    #client_socket.close()
     
 
 
