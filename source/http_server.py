@@ -80,21 +80,41 @@ address = ('localhost', 8000)
 
 print('(Servidor) Creando socket')
 
-server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
-server_socket.bind(address)
-server_socket.listen()
+client_proxy_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+
+client_proxy_socket.bind(address)
+client_proxy_socket.listen()
 
 print("Esperando Clientes ...")
 
 while True:
-    client_socket, client_socket_ad = server_socket.accept()
+    proxy_server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM) #socket cliente para el server original
+
+    client_socket, client_socket_ad = client_proxy_socket.accept()
 
     #recibe peticion
     msg = client_socket.recv(buff_size)
     msg_str = msg.decode()
     parsed_msg = parse_HTTP_message(msg_str)
 
+    original_server_ad = (parsed_msg["headers"]["Host"].strip(), 80)
+
+    proxy_server_socket.connect(original_server_ad)
+    proxy_server_socket.send(msg)
+
+    server_response = proxy_server_socket.recv(buff_size)
+
+    client_socket.send(server_response)
+    client_socket.close()
+
+
+    
+
+
+
+
+    """
     start_line_list = parsed_msg["start-line"].split(" ")
     method = start_line_list[0]
 
@@ -127,6 +147,8 @@ while True:
     print(response)
 
     client_socket.send(response.encode())
+    """
+
 
     #client_socket.close()
     
