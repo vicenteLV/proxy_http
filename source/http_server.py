@@ -1,4 +1,6 @@
+from email.utils import formatdate
 import socket
+
 
 """
 Funciones auxiliares
@@ -32,8 +34,7 @@ def parse_HTTP_message(http_msg):
 
     return dict_http
 
-def receive_full_msg(connection_socket, buff):
-    
+
 
 """
 create_HTTP_message :: dict -> text
@@ -52,8 +53,15 @@ def create_HTTP_message(structure):
 
     return http_msg
 
+#calculo del largo de index.html
+with open("../html/index.html", "r", encoding="utf-8") as file:
+    html_body = file.read()
 
-buf_size = 1024
+html_encoded = html_body.encode()
+length_indexHTML = len(html_encoded) #largo de cuerpo para mensaje http
+type_encoding_indexHTML = "text/html; charset=utf-8" #para linea de http 'Content-Type:...'
+
+buff_size = 1024
 address = ('localhost', 8000)
 
 print('(Servidor) Creando socket')
@@ -68,8 +76,30 @@ print("Esperando Clientes ...")
 while True:
     client_socket, client_socket_ad = server_socket.accept()
 
-    msg = client_socket.recv(buf_size)
-    print(msg)
+    #recibe peticion
+    msg = client_socket.recv(buff_size)
+    msg_str = msg.decode()
+    parsed_msg = parse_HTTP_message(msg_str)
+    print(create_HTTP_message(parsed_msg))
+
+    start_line_list = parsed_msg["start-line"].split(" ")
+    method = start_line_list[0]
+
+    response = ""
+    if(method=="GET"):
+        start_line_response = start_line_list[2]+" 200 OK\r\n"
+        response += start_line_response                                #start-line
+        response += "Server: http_server.py\r\n"                       #server
+
+        response_date = formatdate(timeval=None, localtime=False, usegmt=True)
+        response += f"Date: {response_date}\r\n"                       #fecha
+        response += f"Content-Type: {type_encoding_indexHTML}\r\n"     #content type
+        response += f"Content-Length: {length_indexHTML}\r\n"          #content length
+        response += "Connection: keep-alive\r\n"                       #connection
+        response += "Acces-Control-Allow-Origin: *\r\n\r\n"            #allowed origins
+
+        response += html_body 
+
 
     print("Se ha recibido mensaje...")
     
