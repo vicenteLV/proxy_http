@@ -114,7 +114,12 @@ while True:
         response += "Connection: keep-alive\r\n"                       #connection
         response += "Acces-Control-Allow-Origin: *\r\n"                #allowed origins
 
-        response += "X-ElQuePregunta: vicente\r\n\r\n"
+        #lectura de json
+        dict_json = read_json("../json/datos.json")
+        consultores_lista = dict_json["X_ElQuePregunta"]
+        nombre_q_pregunta = consultores_lista[0]["nombre"]
+
+        response += f"X-ElQuePregunta: {nombre_q_pregunta}\r\n\r\n"
 
         response += html_body 
 
