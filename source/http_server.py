@@ -32,6 +32,25 @@ def parse_HTTP_message(http_msg):
 
     return dict_http
 
+"""
+create_HTTP_message :: dict -> text
+recibe datos de http en formato diccionario y los traspasa a texto plano
+"""
+def create_HTTP_message(structure):
+    http_msg = ""
+
+    http_msg += structure["start-line"]+"\r\n"
+
+    for c, v in structure["headers"].items():
+        text = f"{c}: {v}\r\n" #agregar header con valor al texto plano
+        http_msg += text
+
+    http_msg += "\r\n"+structure["body"] #se agrega el salto de linea adicional
+
+    return http_msg
+
+
+
 
 buf_size = 1024
 address = ('localhost', 8000)
