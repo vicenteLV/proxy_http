@@ -32,6 +32,9 @@ def parse_HTTP_message(http_msg):
 
     return dict_http
 
+def receive_full_msg(connection_socket, buff):
+    
+
 """
 create_HTTP_message :: dict -> text
 recibe datos de http en formato diccionario y los traspasa a texto plano
@@ -50,8 +53,6 @@ def create_HTTP_message(structure):
     return http_msg
 
 
-
-
 buf_size = 1024
 address = ('localhost', 8000)
 
@@ -67,15 +68,10 @@ print("Esperando Clientes ...")
 while True:
     client_socket, client_socket_ad = server_socket.accept()
 
-    """
-    mensaje_rcv = funcion_recibir_mensaje()"""
+    msg = client_socket.recv(buf_size)
+    print(msg)
 
-
-
-
-
-
-    
+    print("Se ha recibido mensaje...")
     
 
 
