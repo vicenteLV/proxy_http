@@ -54,11 +54,22 @@ def create_HTTP_message(structure):
 
     return http_msg
 
+"""
+html_to_string :: str -> str
+recibe ruta de archivo html y devuelve su contenido en texto plano
+"""
+def html_to_str(ruta):
+    with open(ruta, "r", encoding="utf-8") as file:
+        html_content = file.read()
+
+    return html_content
+
 #calculo del largo de index.html
 with open("../html/index.html", "r", encoding="utf-8") as file:
     html_body = file.read()
 
-html_encoded = html_body.encode()
+indexHTML_encoded = html_to_str("../html/index.html").encode()
+errorHTML_encoded = html_to_str("../html/error.html")
 length_indexHTML = len(html_encoded) #largo de cuerpo para mensaje http
 type_encoding_indexHTML = "text/html; charset=utf-8" #para linea de http 'Content-Type:...'
 
@@ -98,28 +109,38 @@ while True:
     msg_str = msg.decode()
     parsed_msg = parse_HTTP_message(msg_str)
 
-    original_server_ad = (parsed_msg["headers"]["Host"].strip(), 80)
+    #sitios bloqueados
+    dict_blocked = read_json("../json/restricciones.js")
+    forb_sites_list = dict_blocked["blocked"]
 
-    proxy_server_socket.connect(original_server_ad)
-    proxy_server_socket.send(msg)
+    direccion = parsed_msg["headers"]["Host"].strip()
+    site_request_str = "http://"+direccion
 
-    server_response = proxy_server_socket.recv(buff_size)
-
-    client_socket.send(server_response)
-    client_socket.close()
-
-
-    
-
-
-
-
-    """
     start_line_list = parsed_msg["start-line"].split(" ")
     method = start_line_list[0]
 
     response = ""
     response_code = ""
+    start_line_response = ""
+
+    if site_request_str in forb_sites_list:
+        response_code = "403"
+        start_line_response += start_line_list[2]+ " " + response_code + " error\r\n"
+
+
+    else:
+        original_server_ad = (direccion, 80)
+
+        proxy_server_socket.connect(original_server_ad)
+        proxy_server_socket.send(msg)
+
+        server_response = proxy_server_socket.recv(buff_size)
+
+        client_socket.send(server_response)
+        client_socket.close()
+
+    """
+
 
     if(method=="GET"):
         response_code = "200"
