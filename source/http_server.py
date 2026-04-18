@@ -7,6 +7,11 @@ import json
 Funciones auxiliares
 """
 
+def endsWith(word, c):
+    if not len(word): return False
+
+    return word[-1]==c 
+
 """
 parse_HTTP_message :: str -> dict
 parseo de mensaje http, recibe texto plano y separa contenido según saltos
@@ -28,7 +33,7 @@ def parse_HTTP_message(http_msg):
     dict_headers = {}
     for h in head_headers:
         clave_valor = h.split(":")
-        dict_headers[clave_valor[0]] = clave_valor[1]
+        dict_headers[clave_valor[0]] = clave_valor[1].strip()
 
     dict_http["headers"] = dict_headers
     dict_http["body"] = head_body[1]
@@ -64,13 +69,11 @@ def html_to_str(ruta):
 
     return html_content
 
-#calculo del largo de index.html
-with open("../html/index.html", "r", encoding="utf-8") as file:
-    html_body = file.read()
 
-indexHTML_encoded = html_to_str("../html/index.html").encode()
-errorHTML_encoded = html_to_str("../html/error.html")
-length_indexHTML = len(html_encoded) #largo de cuerpo para mensaje http
+indexHTML_str = html_to_str("../html/index.html")
+errorHTML_str = html_to_str("../html/error.html")
+length_indexHTML = len(indexHTML_str.encode()) #largo de cuerpo para mensaje http
+length_errorHTML = len(errorHTML_str.encode())
 type_encoding_indexHTML = "text/html; charset=utf-8" #para linea de http 'Content-Type:...'
 
 """
@@ -110,68 +113,65 @@ while True:
     parsed_msg = parse_HTTP_message(msg_str)
 
     #sitios bloqueados
-    dict_blocked = read_json("../json/restricciones.js")
-    forb_sites_list = dict_blocked["blocked"]
+    dict_blocked = read_json("../json/restricciones.json")
+    forbbiden_rts = [fb.rstrip("/") for fb in dict_blocked["blocked"]]
 
-    direccion = parsed_msg["headers"]["Host"].strip()
-    site_request_str = "http://"+direccion
-
-    start_line_list = parsed_msg["start-line"].split(" ")
+    start_line_list = parsed_msg["start-line"].split(" ") #metodo, ruta, version
     method = start_line_list[0]
+    ruta = start_line_list[1]
+    dominio = parsed_msg["headers"]["Host"].strip()
 
-    response = ""
-    response_code = ""
-    start_line_response = ""
+    ruta_limpia=""
+    if ruta.startswith("http"):
+        ruta_limpia = ruta.replace("http://","").replace(dominio, "").strip("/")
+    else:
+        ruta_limpia = ruta.strip("/")
 
-    if site_request_str in forb_sites_list:
+    rt = "http://"+ dominio + "/" + ruta_limpia.lstrip("/")
+
+    if rt in forbbiden_rts:
+        response = ""
         response_code = "403"
-        start_line_response += start_line_list[2]+ " " + response_code + " error\r\n"
+        response += start_line_list[2]+ " " + response_code + " error\r\n"
+        response += "Server: http_server.py\r\n"
+
+        response_date = formatdate(timeval=None, localtime=False, usegmt=True)
+        response += f"Date: {response_date}\r\n"                       #fecha
+        response += f"Content-Type: {type_encoding_indexHTML}\r\n"     #content type
+        response += f"Content-Length: {length_errorHTML}\r\n"          #content length
+        response += "Connection: close\r\n"                       #connection
+        response += "Acces-Control-Allow-Origin: *\r\n\r\n"            #allowed origins
+
+        response += errorHTML_str
+
+        client_socket.send(response.encode())
+
+        proxy_server_socket.close()
+        client_socket.close()
 
 
     else:
-        original_server_ad = (direccion, 80)
+        #lectura de json
+        dict_json = read_json("../json/datos.json")
+        consultores_lista = dict_json["Proxy"]
+        nombre_q_pregunta = consultores_lista[0]["nombre"]
+
+        dict_headers = parsed_msg["headers"]
+        dict_headers["X-ElQuePregunta"] = nombre_q_pregunta
+
+        parsed_msg["headers"] = dict_headers #actualizar headers
+
+        msg_proxy_to_server = create_HTTP_message(parsed_msg)
+
+        original_server_ad = (dominio, 80)
 
         proxy_server_socket.connect(original_server_ad)
-        proxy_server_socket.send(msg)
+        proxy_server_socket.send(msg_proxy_to_server.encode())
 
         server_response = proxy_server_socket.recv(buff_size)
 
         client_socket.send(server_response)
         client_socket.close()
-
-    """
-
-
-    if(method=="GET"):
-        response_code = "200"
-        start_line_response = start_line_list[2]+" "+response_code+" OK\r\n"
-        response += start_line_response                                #start-line
-        response += "Server: http_server.py\r\n"                       #server
-
-        response_date = formatdate(timeval=None, localtime=False, usegmt=True)
-        response += f"Date: {response_date}\r\n"                       #fecha
-        response += f"Content-Type: {type_encoding_indexHTML}\r\n"     #content type
-        response += f"Content-Length: {length_indexHTML}\r\n"          #content length
-        response += "Connection: keep-alive\r\n"                       #connection
-        response += "Acces-Control-Allow-Origin: *\r\n"                #allowed origins
-
-        #lectura de json
-        dict_json = read_json("../json/datos.json")
-        consultores_lista = dict_json["X_ElQuePregunta"]
-        nombre_q_pregunta = consultores_lista[0]["nombre"]
-
-        response += f"X-ElQuePregunta: {nombre_q_pregunta}\r\n\r\n"
-
-        response += html_body 
-
-    print(method + " " + response_code)
-    print(response)
-
-    client_socket.send(response.encode())
-    """
-
-
-    #client_socket.close()
     
 
 
