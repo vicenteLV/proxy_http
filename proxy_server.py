@@ -1,9 +1,11 @@
 import socket
 
 """
-http -> dict
+str-> dict
 parseo de mensaje http a diccionario"""
 def parse_HTTP_message(http_msg):
+    print("--- PARSE INICIADO ---\n")
+
     dict_http = {}
     #dividir entre HEAD y BODY
     http_split = http_msg.split("\r\n\r\n")
@@ -21,21 +23,23 @@ def parse_HTTP_message(http_msg):
     headers_list = http_head_split[1:]
     for h in headers_list:
         partes = h.split(":")
-        header_name = h[0].strip()
-        header_desription = h[1].strip()
+        header_name = partes[0].strip()
+        header_desription = partes[1].strip()
         dict_http["headers_dict"][header_name] = header_desription
+
+    print("--- PARSE TERMINADO ---\n")
 
     return dict_http
 
 """
-dict -> http
+dict -> str
 lee diccionario de http y lo pasa a formato mensaje"""
 def create_http_message(dicc):
     startline = dicc["startline"]
-    headers = dicc["headers_dict"] #dictionary
+    headers = dicc["headers_dict"] #diccionario
 
     texto_headers = ""
-    for nombre, descripcion in headers:
+    for nombre, descripcion in headers.items():
         texto_headers += f"{nombre}: {descripcion}\r\n"
 
     texto_headers += "\r\n"
@@ -64,9 +68,15 @@ if __name__ == "__main__" :
         client_socket, client_socket_address = proxy_socket.accept()
         recvd_msg = client_socket.recv(1024)
 
-        print(f"Consulta:\n{recvd_msg.decode()}")
+        print(recvd_msg)
+        diccionario = parse_HTTP_message(recvd_msg.decode())
 
-        response = "Se recibió su consulta"
+        #print(diccionario)
+        print("-----------------")
+        mensaje_reverse = create_http_message(diccionario)
+        print(f"HTTP:\n{mensaje_reverse}")
+
+        response = ""
 
         client_socket.send(response.encode())
         client_socket.close()
