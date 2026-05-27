@@ -1,4 +1,22 @@
 import socket
+from datetime import datetime
+
+#clave, valor para codigos http, clave es el codigo y valor el texto asociado
+CODIGOS = {
+    "200": "OK"
+}
+VERSION_HTTP = "HTTP/1.1"
+CHARSET = "utf-8"
+
+"""
+str -> bytes
+recibe ruta a html y lo transforma a bytes"""
+def html_to_str(ruta):
+    with open(ruta, "r", encoding=CHARSET) as file:
+        contenido = file.read()
+
+    return contenido
+
 
 """
 str-> dict
@@ -49,6 +67,49 @@ def create_http_message(dicc):
     HTTP_msg = startline + "\r\n" + texto_headers + body
 
     return HTTP_msg
+
+"""
+str str (str) (str) (str)-> str
+crea respuesta en formato http"""
+def create_response(codigo, ruta_response, server="proxy_server/1.0", content_type="text/html", connection="keep-alive"):
+    #para fecha
+    now = datetime.now()
+    diccionario_response = {}
+
+    #startline
+    startline = f"{VERSION_HTTP} {codigo} {CODIGOS[codigo]}"
+    diccionario_response["startline"] = startline
+
+    #headers
+    diccionario_headers_response = {}
+    diccionario_headers_response["Server"] = server
+
+    #fecha
+    day_name = now.strftime("%A")[0:3]
+    month_name = now.strftime("%B")[0:3]
+    time = now.strftime("%H:%M:%S GMT")
+    diccionario_headers_response["Date"] = f"{day_name}, {now.day} {month_name} {now.year} {time}"
+
+    diccionario_headers_response["Content_Type"] = f"{content_type}: charset={CHARSET}"      #Content-Type
+
+    #largo
+    response_text = html_to_str(ruta_response)
+    response_len = len(response_text.encode())
+    diccionario_headers_response["Content-Length"] = f"{response_len}"
+
+    diccionario_headers_response["Connection"] = connection
+    diccionario_headers_response["Acces-Control-Allow-Origin"] = "*"
+
+    diccionario_response["headers_dict"] = diccionario_headers_response
+    diccionario_response["BODY"] = response_text
+
+    response = create_http_message(diccionario_response)
+
+    return response 
+    
+
+
+
 
 
 
