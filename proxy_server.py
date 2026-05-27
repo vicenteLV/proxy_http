@@ -1,16 +1,17 @@
 import socket
 from datetime import datetime
 
-#clave, valor para codigos http, clave es el codigo y valor el texto asociado
+#cttes para metodos del servidor
 CODIGOS = {
     "200": "OK"
 }
 VERSION_HTTP = "HTTP/1.1"
 CHARSET = "utf-8"
+NOMBRE = "Vicente López Vergara"
 
 """
-str -> bytes
-recibe ruta a html y lo transforma a bytes"""
+str -> str
+recibe ruta a html y lo transforma a texto plano"""
 def html_to_str(ruta):
     with open(ruta, "r", encoding=CHARSET) as file:
         contenido = file.read()
@@ -71,13 +72,13 @@ def create_http_message(dicc):
 """
 str str (str) (str) (str)-> str
 crea respuesta en formato http"""
-def create_response(codigo, ruta_response, server="proxy_server/1.0", content_type="text/html", connection="keep-alive"):
+def create_response(codigo, ruta_response, version=VERSION_HTTP, charset=CHARSET, server="proxy_server/1.0", content_type="text/html", connection="keep-alive"):
     #para fecha
     now = datetime.now()
     diccionario_response = {}
 
     #startline
-    startline = f"{VERSION_HTTP} {codigo} {CODIGOS[codigo]}"
+    startline = f"{version} {codigo} {CODIGOS[codigo]}"
     diccionario_response["startline"] = startline
 
     #headers
@@ -90,7 +91,7 @@ def create_response(codigo, ruta_response, server="proxy_server/1.0", content_ty
     time = now.strftime("%H:%M:%S GMT")
     diccionario_headers_response["Date"] = f"{day_name}, {now.day} {month_name} {now.year} {time}"
 
-    diccionario_headers_response["Content_Type"] = f"{content_type}: charset={CHARSET}"      #Content-Type
+    diccionario_headers_response["Content_Type"] = f"{content_type}: charset={charset}"      #Content-Type
 
     #largo
     response_text = html_to_str(ruta_response)
@@ -99,6 +100,7 @@ def create_response(codigo, ruta_response, server="proxy_server/1.0", content_ty
 
     diccionario_headers_response["Connection"] = connection
     diccionario_headers_response["Acces-Control-Allow-Origin"] = "*"
+    diccionario_headers_response["X-ElQuePregunta"] = NOMBRE
 
     diccionario_response["headers_dict"] = diccionario_headers_response
     diccionario_response["BODY"] = response_text
@@ -107,9 +109,6 @@ def create_response(codigo, ruta_response, server="proxy_server/1.0", content_ty
 
     return response 
     
-
-
-
 
 
 
@@ -131,13 +130,15 @@ if __name__ == "__main__" :
 
         print(recvd_msg)
         diccionario = parse_HTTP_message(recvd_msg.decode())
+        version_http_consulta = diccionario["startline"].split(" ")[2]
 
         #print(diccionario)
         print("-----------------")
         mensaje_reverse = create_http_message(diccionario)
         print(f"HTTP:\n{mensaje_reverse}")
 
-        response = ""
+        response = create_response("200", "html/index.html", version=version_http_consulta)
+        print(response)
 
         client_socket.send(response.encode())
         client_socket.close()
