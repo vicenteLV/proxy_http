@@ -1,5 +1,7 @@
 import json
 
+ctte = "ctte"
+
 """
 str -> str
 recibe ruta a html y lo transforma a texto plano"""
@@ -14,7 +16,7 @@ str -> dict
 recibe ruta de json y lo convierte a diccionario"""
 def json_load(ruta):
     with open(ruta) as file:
-        data = json.load(ruta)
+        data = json.load(file)
 
     return data
 

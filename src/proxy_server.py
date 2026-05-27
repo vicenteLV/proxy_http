@@ -3,13 +3,14 @@ import proxy_aux
 from datetime import datetime
 
 
+data = proxy_aux.json_load("../json/data.json")
+forbidden = proxy_aux.json_load("../json/prohibidos.json")
+
 #cttes para metodos del servidor
-CODIGOS = {
-    "200": "OK"
-}
-VERSION_HTTP = "HTTP/1.1"
-CHARSET = "utf-8"
-NOMBRE = "Vicente López Vergara"
+CODIGOS = data["Codigos"]
+VERSION_HTTP = data["VERSION_HTTP"]
+CHARSET = data["CHARSET"]
+NOMBRE = data["NOMBRE"]
 
 """
 str str (str) (str) (str)-> str
