@@ -76,14 +76,16 @@ if __name__ == "__main__" :
 
         version_http_consulta = client_query_dict["startline"].split(" ")[2] #posible eliminacion
 
+        
+
         server_host = client_query_dict["headers_dict"]["Host"]
         #proxy to server socket
         proxy_to_server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        puerto = 80
+        puerto = 80     #reservado para http
         server_address = (server_host, puerto)
         proxy_to_server.connect(server_address)
         proxy_to_server.send(recvd_msg)
-        recvd_server = proxy_to_server.recv(buffer_size)
+        recvd_server = proxy_to_server.recv(buffer_size)       #mensaje recibido de servidor
 
         response = recvd_server
         print(response)

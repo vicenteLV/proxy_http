@@ -3,6 +3,15 @@ import json
 ctte = "ctte"
 
 """
+str str -> str"""
+def route_norm(ruta):
+    ruta_normalizada = ruta
+    if not ruta.endswith("/"):
+        ruta_normalizada += "/"
+
+    return ruta_normalizada
+
+"""
 str -> str
 recibe ruta a html y lo transforma a texto plano"""
 def html_to_str(ruta):
