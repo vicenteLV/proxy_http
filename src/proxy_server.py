@@ -59,26 +59,36 @@ if __name__ == "__main__" :
     buffer_size = 1024
     proxy_socket_address = ("localhost", 5000)
 
-    print("##### Creando socket de servidor #####\n")
-
-    proxy_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    proxy_socket.bind(proxy_socket_address)
-    proxy_socket.listen(3)
+    print("##### Creando sockets #####\n")
+    #socket para escuchar a cliente
+    client_to_proxy = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    client_to_proxy.bind(proxy_socket_address)
+    client_to_proxy.listen(3)
 
     print("##### Esperando clientes #####\n")
 
     while True:
-        client_socket, client_socket_address = proxy_socket.accept()
+        client_socket, client_socket_address = client_to_proxy.accept()
         recvd_msg = client_socket.recv(1024)
 
         print(recvd_msg)
-        diccionario = proxy_aux.parse_HTTP_message(recvd_msg.decode())
-        version_http_consulta = diccionario["startline"].split(" ")[2]
+        client_query_dict = proxy_aux.parse_HTTP_message(recvd_msg.decode())
 
-        response = create_response("200", "../html/index.html", version=version_http_consulta)
+        version_http_consulta = client_query_dict["startline"].split(" ")[2] #posible eliminacion
+
+        server_host = client_query_dict["headers_dict"]["Host"]
+        #proxy to server socket
+        proxy_to_server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        puerto = 80
+        server_address = (server_host, puerto)
+        proxy_to_server.connect(server_address)
+        proxy_to_server.send(recvd_msg)
+        recvd_server = proxy_to_server.recv(buffer_size)
+
+        response = recvd_server
         print(response)
 
-        client_socket.send(response.encode())
+        client_socket.send(response)
         client_socket.close()
 
         print(f"Conexión con {client_socket_address} ha sido cerrada\n")
