@@ -51,8 +51,6 @@ def create_response(codigo, ruta_response, version=VERSION_HTTP, charset=CHARSET
     response = proxy_aux.create_http_message(diccionario_response)
 
     return response 
-    
-
 
 
 if __name__ == "__main__" :
@@ -75,22 +73,39 @@ if __name__ == "__main__" :
         client_query_dict = proxy_aux.parse_HTTP_message(recvd_msg.decode())
 
         version_http_consulta = client_query_dict["startline"].split(" ")[2] #posible eliminacion
-
-        
-
         server_host = client_query_dict["headers_dict"]["Host"]
-        #proxy to server socket
-        proxy_to_server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        puerto = 80     #reservado para http
-        server_address = (server_host, puerto)
-        proxy_to_server.connect(server_address)
-        proxy_to_server.send(recvd_msg)
-        recvd_server = proxy_to_server.recv(buffer_size)       #mensaje recibido de servidor
 
-        response = recvd_server
-        print(response)
+        route = client_query_dict["startline"].split(" ")[1]
 
-        client_socket.send(response)
+        #normalizacion de / en las rutas prohibidas y de consulta
+        ruta = proxy_aux.route_norm(route)
+        print(f"ruta: {ruta}")
+        #route_query = f"http://{ruta}" 
+        forbidden_sites = list(map(proxy_aux.route_norm, forbidden["blocked"]))
+        print(forbidden_sites)
+
+        response = ""
+        #filtro para urls prohibidas
+        print(ruta in forbidden_sites)
+        if ruta in forbidden_sites:
+            print("pagina prohibida")
+            response = create_response("403", "../html/error403.html")
+        else:
+            #proxy to server socket
+            proxy_to_server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            puerto = 80     #reservado para http
+            server_address = (server_host, puerto)
+            proxy_to_server.connect(server_address)
+
+            #modificar diccionario con header de nombre
+            client_query_dict = proxy_aux.add_header("X-ElQuePregunta", NOMBRE, client_query_dict)
+            print(client_query_dict)
+            recv_w_header = proxy_aux.create_http_message(client_query_dict)
+            proxy_to_server.send(recv_w_header.encode())
+            recvd_from_server = proxy_to_server.recv(buffer_size).decode()       #mensaje recibido de servidor
+            response = recvd_from_server
+
+        client_socket.send(response.encode())
         client_socket.close()
 
         print(f"Conexión con {client_socket_address} ha sido cerrada\n")

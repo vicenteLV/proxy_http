@@ -3,13 +3,22 @@ import json
 ctte = "ctte"
 
 """
-str str -> str"""
+str -> str
+recibe ruta y agrega / si no está ya"""
 def route_norm(ruta):
     ruta_normalizada = ruta
     if not ruta.endswith("/"):
         ruta_normalizada += "/"
 
     return ruta_normalizada
+
+"""
+str str dict-> dict
+recibe nombre y descripcion de nuevo header y lo agrega al diccionario de un mensaje http, tambien entregado"""
+def add_header(header_name, header_desc, http_dict):
+    http_dict["headers_dict"][header_name] = header_desc
+    return http_dict
+
 
 """
 str -> str
